@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第一章：基础理论 - 炁体源流</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title">炁体源流</h1>
+            <p class="site-subtitle">张至顺道长著作</p>
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">首页</a></li>
+                <li><a href="chapter-1.html" class="active">第一章：基础理论</a></li>
+                <li><a href="chapter-2.html">第二章：修炼方法</a></li>
+                <li><a href="chapter-3.html">第三章：实践应用</a></li>
+                <li><a href="chapter-4.html">第四章：心得体会</a></li>
+                <li><a href="gallery.html">图片浏览</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="chapter-content">
+                <h2>第一章：基础理论</h2>
+                <p class="chapter-intro">本章介绍炁体源流的基本概念、理论基础和核心思想。（第 0-127 页）</p>
+                
+                <div id="page-viewer" class="page-viewer">
+                    <!-- 页面内容将通过 JavaScript 动态加载 -->
+                    <div class="loading">正在加载内容...</div>
+                </div>
+
+                <div class="pagination">
+                    <a href="#" id="prev-page" class="pagination-btn disabled">上一页</a>
+                    <span id="page-info" class="page-info">第 1 页 / 共 128 页</span>
+                    <a href="#" id="next-page" class="pagination-btn">下一页</a>
+                </div>
+
+                <div class="quick-jump">
+                    <label for="page-select">快速跳转：</label>
+                    <select id="page-select">
+                        <!-- 选项将通过 JavaScript 动态生成 -->
+                    </select>
+                    <button id="jump-btn" class="btn">跳转</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2024 炁体源流 - 张至顺道长著作</p>
+            <p>本网站仅供学习研究使用</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // 第一章专用脚本
+        const CHAPTER_NUM = 1;
+        const START_PAGE = 0;
+        const END_PAGE = 127;
+        const TOTAL_PAGES = 128;
+
+        let currentPage = START_PAGE;
+
+        // 从 URL 参数获取当前页码
+        function getCurrentPageFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = parseInt(urlParams.get('page'));
+            if (!isNaN(page) && page >= START_PAGE && page <= END_PAGE) {
+                return page;
+            }
+            return START_PAGE;
+        }
+
+        // 更新 URL 参数
+        function updateURL(page) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', page);
+            const newURL = window.location.pathname + '?' + urlParams.toString();
+            window.history.pushState({ page: page }, '', newURL);
+        }
+
+        // 加载页面内容
+        function loadPage(pageNum) {
+            const viewer = document.getElementById('page-viewer');
+            viewer.innerHTML = '<div class="loading">正在加载内容...</div>';
+
+            const imgPath = `images/page_${String(pageNum).padStart(4, '0')}.jpg`;
+            
+            // 创建页面内容
+            setTimeout(() => {
+                viewer.innerHTML = `
+                    <div class="page-image-container">
+                        <img src="${imgPath}" alt="第${pageNum + 1}页" class="page-image" loading="lazy">
+                    </div>
+                    <div class="page-info-text">
+                        <p><strong>页码：</strong>第 ${pageNum + 1} 页（原书序号：${String(pageNum).padStart(3, '0')}）</p>
+                        <p><strong>章节：</strong>第一章 基础理论</p>
+                        <p class="note">提示：点击图片可放大查看细节。由于 OCR 识别可能存在误差，请以原图为准。</p>
+                    </div>
+                `;
+
+                // 更新分页信息
+                updatePagination();
+                updateURL(pageNum);
+                scrollToTop();
+            }, 100);
+        }
+
+        // 更新分页按钮状态
+        function updatePagination() {
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            const pageInfo = document.getElementById('page-info');
+
+            pageInfo.textContent = `第 ${currentPage + 1} 页 / 共 ${TOTAL_PAGES} 页`;
+
+            if (currentPage <= START_PAGE) {
+                prevBtn.classList.add('disabled');
+                prevBtn.style.pointerEvents = 'none';
+            } else {
+                prevBtn.classList.remove('disabled');
+                prevBtn.style.pointerEvents = 'auto';
+            }
+
+            if (currentPage >= END_PAGE) {
+                nextBtn.classList.add('disabled');
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.classList.remove('disabled');
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        // 初始化快速跳转选择器
+        function initQuickJump() {
+            const select = document.getElementById('page-select');
+            const jumpBtn = document.getElementById('jump-btn');
+
+            // 生成选项（每 10 页一个选项）
+            for (let i = START_PAGE; i <= END_PAGE; i += 10) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `第 ${i + 1} 页`;
+                select.appendChild(option);
+            }
+
+            // 跳转按钮事件
+            jumpBtn.addEventListener('click', () => {
+                const selectedPage = parseInt(select.value);
+                if (!isNaN(selectedPage)) {
+                    currentPage = selectedPage;
+                    loadPage(currentPage);
+                }
+            });
+        }
+
+        // 初始化分页事件
+        function initPagination() {
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+
+            prevBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage > START_PAGE) {
+                    currentPage--;
+                    loadPage(currentPage);
+                }
+            });
+
+            nextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentPage < END_PAGE) {
+                    currentPage++;
+                    loadPage(currentPage);
+                }
+            });
+
+            // 键盘导航
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' && currentPage > START_PAGE) {
+                    currentPage--;
+                    loadPage(currentPage);
+                } else if (e.key === 'ArrowRight' && currentPage < END_PAGE) {
+                    currentPage++;
+                    loadPage(currentPage);
+                }
+            });
+        }
+
+        // 处理浏览器前进/后退
+        window.addEventListener('popstate', (e) => {
+            if (e.state && e.state.page !== undefined) {
+                currentPage = e.state.page;
+                loadPage(currentPage);
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            currentPage = getCurrentPageFromURL();
+            loadPage(currentPage);
+            initQuickJump();
+            initPagination();
+        });
+    </script>
+</body>
+</html>
