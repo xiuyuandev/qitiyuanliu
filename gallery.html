@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片浏览 - 炁体源流</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title">炁体源流</h1>
+            <p class="site-subtitle">张至顺道长著作</p>
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">首页</a></li>
+                <li><a href="chapter-1.html">第一章：基础理论</a></li>
+                <li><a href="chapter-2.html">第二章：修炼方法</a></li>
+                <li><a href="chapter-3.html">第三章：实践应用</a></li>
+                <li><a href="chapter-4.html">第四章：心得体会</a></li>
+                <li><a href="gallery.html" class="active">图片浏览</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="gallery-section">
+                <h2>全书图片浏览</h2>
+                <p class="gallery-intro">共 512 页，点击任意图片可放大查看</p>
+                
+                <div class="gallery-controls">
+                    <label for="chapter-filter">按章节筛选：</label>
+                    <select id="chapter-filter">
+                        <option value="all">全部章节</option>
+                        <option value="1">第一章：基础理论 (0-127 页)</option>
+                        <option value="2">第二章：修炼方法 (128-255 页)</option>
+                        <option value="3">第三章：实践应用 (256-383 页)</option>
+                        <option value="4">第四章：心得体会 (384-511 页)</option>
+                    </select>
+                    
+                    <label for="page-range">页码范围：</label>
+                    <input type="number" id="start-page" placeholder="起始页" min="0" max="511" value="0">
+                    <span>-</span>
+                    <input type="number" id="end-page" placeholder="结束页" min="0" max="511" value="511">
+                    <button id="filter-btn" class="btn">筛选</button>
+                    <button id="reset-btn" class="btn" style="background: #999;">重置</button>
+                </div>
+
+                <div id="gallery-grid" class="gallery-grid">
+                    <!-- 图片将通过 JavaScript 动态加载 -->
+                </div>
+
+                <div class="pagination" id="gallery-pagination">
+                    <a href="#" id="gallery-prev" class="pagination-btn disabled">上一页</a>
+                    <span id="gallery-page-info" class="page-info">第 1 页 / 共 11 页</span>
+                    <a href="#" id="gallery-next" class="pagination-btn">下一页</a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 灯箱效果 -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <span class="lightbox-nav lightbox-prev">&#10094;</span>
+        <img id="lightbox-img" src="" alt="">
+        <span class="lightbox-nav lightbox-next">&#10095;</span>
+        <p id="lightbox-caption" class="lightbox-caption"></p>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2024 炁体源流 - 张至顺道长著作</p>
+            <p>本网站仅供学习研究使用</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // 画廊页面专用脚本
+        const TOTAL_IMAGES = 512;
+        const IMAGES_PER_PAGE = 48;
+        let currentGalleryPage = 1;
+        let filteredImages = [];
+
+        // 生成所有图片数据
+        function generateImageData() {
+            const images = [];
+            for (let i = 0; i < TOTAL_IMAGES; i++) {
+                images.push({
+                    page: i,
+                    filename: `page_${String(i).padStart(4, '0')}.jpg`,
+                    chapter: Math.floor(i / 128) + 1,
+                    alt: `第${i + 1}页`
+                });
+            }
+            return images;
+        }
+
+        const allImages = generateImageData();
+
+        // 渲染画廊网格
+        function renderGallery(images, pageNum = 1) {
+            const grid = document.getElementById('gallery-grid');
+            const startIdx = (pageNum - 1) * IMAGES_PER_PAGE;
+            const endIdx = Math.min(startIdx + IMAGES_PER_PAGE, images.length);
+            const pageImages = images.slice(startIdx, endIdx);
+
+            grid.innerHTML = '';
+            pageImages.forEach(img => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="images/${img.filename}" alt="${img.alt}" loading="lazy" data-page="${img.page}">
+                    <p>${img.alt}</p>
+                `;
+                grid.appendChild(item);
+            });
+
+            // 重新初始化灯箱
+            initLightbox();
+        }
+
+        // 更新画廊分页
+        function updateGalleryPagination(totalImages) {
+            const totalPages = Math.ceil(totalImages / IMAGES_PER_PAGE);
+            const pageInfo = document.getElementById('gallery-page-info');
+            const prevBtn = document.getElementById('gallery-prev');
+            const nextBtn = document.getElementById('gallery-next');
+
+            pageInfo.textContent = `第 ${currentGalleryPage} 页 / 共 ${totalPages} 页`;
+
+            if (currentGalleryPage <= 1) {
+                prevBtn.classList.add('disabled');
+                prevBtn.style.pointerEvents = 'none';
+            } else {
+                prevBtn.classList.remove('disabled');
+                prevBtn.style.pointerEvents = 'auto';
+            }
+
+            if (currentGalleryPage >= totalPages) {
+                nextBtn.classList.add('disabled');
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.classList.remove('disabled');
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        // 筛选图片
+        function filterImages() {
+            const chapterFilter = document.getElementById('chapter-filter').value;
+            const startPage = parseInt(document.getElementById('start-page').value) || 0;
+            const endPage = parseInt(document.getElementById('end-page').value) || TOTAL_IMAGES - 1;
+
+            filteredImages = allImages.filter(img => {
+                const chapterMatch = chapterFilter === 'all' || img.chapter === parseInt(chapterFilter);
+                const pageMatch = img.page >= startPage && img.page <= endPage;
+                return chapterMatch && pageMatch;
+            });
+
+            currentGalleryPage = 1;
+            renderGallery(filteredImages, currentGalleryPage);
+            updateGalleryPagination(filteredImages.length);
+        }
+
+        // 初始化画廊分页事件
+        function initGalleryPagination() {
+            const prevBtn = document.getElementById('gallery-prev');
+            const nextBtn = document.getElementById('gallery-next');
+
+            prevBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentGalleryPage > 1) {
+                    currentGalleryPage--;
+                    renderGallery(filteredImages, currentGalleryPage);
+                    updateGalleryPagination(filteredImages.length);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+
+            nextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const totalPages = Math.ceil(filteredImages.length / IMAGES_PER_PAGE);
+                if (currentGalleryPage < totalPages) {
+                    currentGalleryPage++;
+                    renderGallery(filteredImages, currentGalleryPage);
+                    updateGalleryPagination(filteredImages.length);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
+        // 初始化筛选控件
+        function initFilterControls() {
+            const filterBtn = document.getElementById('filter-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const chapterFilter = document.getElementById('chapter-filter');
+            const startPageInput = document.getElementById('start-page');
+            const endPageInput = document.getElementById('end-page');
+
+            filterBtn.addEventListener('click', filterImages);
+            
+            resetBtn.addEventListener('click', () => {
+                chapterFilter.value = 'all';
+                startPageInput.value = 0;
+                endPageInput.value = TOTAL_IMAGES - 1;
+                filteredImages = allImages;
+                currentGalleryPage = 1;
+                renderGallery(filteredImages, currentGalleryPage);
+                updateGalleryPagination(filteredImages.length);
+            });
+
+            // 回车键触发筛选
+            startPageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') filterImages();
+            });
+            endPageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') filterImages();
+            });
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            filteredImages = allImages;
+            renderGallery(filteredImages, currentGalleryPage);
+            updateGalleryPagination(filteredImages.length);
+            initGalleryPagination();
+            initFilterControls();
+        });
+    </script>
+</body>
+</html>
